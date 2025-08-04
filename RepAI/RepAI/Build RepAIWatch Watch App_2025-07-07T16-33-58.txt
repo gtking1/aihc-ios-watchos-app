@@ -1,0 +1,47 @@
+
+Showing Recent Issues
+
+Build target RepAIWatch Watch App of project RepAI with configuration Debug
+
+SwiftCompile normal arm64 Compiling\ SharedSessionManager.swift /Users/grantking/Desktop/RepAI/SharedSessionManager.swift (in target 'RepAIWatch Watch App' from project 'RepAI')
+
+Failed frontend command:
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-frontend -frontend -c -primary-file /Users/grantking/Desktop/RepAI/SharedSessionManager.swift /Users/grantking/Desktop/RepAI/RepAIWatch\ Watch\ App/RepAIWatchApp.swift /Users/grantking/Desktop/RepAI/RepAIWatch\ Watch\ App/WatchContentView.swift /Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/DerivedSources/GeneratedAssetSymbols.swift -emit-dependencies-path /Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/Objects-normal/arm64/SharedSessionManager.d -emit-const-values-path /Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/Objects-normal/arm64/SharedSessionManager.swiftconstvalues -emit-reference-dependencies-path /Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/Objects-normal/arm64/SharedSessionManager.swiftdeps -serialize-diagnostics-path /Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/Objects-normal/arm64/SharedSessionManager.dia -emit-localized-strings -emit-localized-strings-path /Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/Objects-normal/arm64 -target arm64-apple-watchos11.4-simulator -Xllvm -aarch64-use-tbi -enable-objc-interop -sdk /Applications/Xcode.app/Contents/Developer/Platforms/WatchSimulator.platform/Developer/SDKs/WatchSimulator11.4.sdk -I /Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Products/Debug-watchsimulator -F /Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Products/Debug-watchsimulator -no-color-diagnostics -enable-testing -g -debug-info-format\=dwarf -dwarf-version\=5 -module-cache-path /Users/grantking/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -swift-version 5 -enforce-exclusivity\=checked -Onone -D DEBUG -serialize-debugging-options -const-gather-protocols-file /Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/Objects-normal/arm64/RepAIWatch\ Watch\ App_const_extract_protocols.json -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -empty-abi-descriptor -validate-clang-modules-once -clang-build-session-file /Users/grantking/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -working-directory -Xcc /Users/grantking/Desktop/RepAI -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift -enable-anonymous-context-mangled-names -file-compilation-dir /Users/grantking/Desktop/RepAI -Xcc -ivfsstatcache -Xcc /Users/grantking/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/watchsimulator11.4-22T246-bbd9e64f77e0243bbe09f99c252f08e8.sdkstatcache -Xcc -I/Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/swift-overrides.hmap -Xcc -iquote -Xcc /Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/RepAIWatch\ Watch\ App-generated-files.hmap -Xcc -I/Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/RepAIWatch\ Watch\ App-own-target-headers.hmap -Xcc -I/Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/RepAIWatch\ Watch\ App-all-target-headers.hmap -Xcc -iquote -Xcc /Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/RepAIWatch\ Watch\ App-project-headers.hmap -Xcc -I/Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Products/Debug-watchsimulator/include -Xcc -I/Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/DerivedSources-normal/arm64 -Xcc -I/Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/DerivedSources/arm64 -Xcc -I/Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/DerivedSources -Xcc -DDEBUG\=1 -module-name RepAIWatch_Watch_App -frontend-parseable-output -disable-clang-spi -target-sdk-version 11.4 -target-sdk-name watchsimulator11.4 -external-plugin-path /Applications/Xcode.app/Contents/Developer/Platforms/WatchOS.platform/Developer/usr/lib/swift/host/plugins\#/Applications/Xcode.app/Contents/Developer/Platforms/WatchOS.platform/Developer/usr/bin/swift-plugin-server -external-plugin-path /Applications/Xcode.app/Contents/Developer/Platforms/WatchOS.platform/Developer/usr/local/lib/swift/host/plugins\#/Applications/Xcode.app/Contents/Developer/Platforms/WatchOS.platform/Developer/usr/bin/swift-plugin-server -in-process-plugin-server-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/libSwiftInProcPluginServer.dylib -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/local/lib/swift/host/plugins -o /Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Build/Intermediates.noindex/RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/Objects-normal/arm64/SharedSessionManager.o -index-unit-output-path /RepAI.build/Debug-watchsimulator/RepAIWatch\ Watch\ App.build/Objects-normal/arm64/SharedSessionManager.o -index-store-path /Users/grantking/Library/Developer/Xcode/DerivedData/RepAI-bjddvhmoodtltndultppqfqezpdd/Index.noindex/DataStore -index-system-modules
+
+SwiftCompile normal arm64 /Users/grantking/Desktop/RepAI/SharedSessionManager.swift (in target 'RepAIWatch Watch App' from project 'RepAI')
+    cd /Users/grantking/Desktop/RepAI
+    
+
+/Users/grantking/Desktop/RepAI/SharedSessionManager.swift:211:36: error: cannot find 'convnet_model' in scope
+            let convNetModel = try convnet_model(configuration: MLModelConfiguration()) // Your ConvNet model name
+                                   ^~~~~~~~~~~~~
+/Users/grantking/Desktop/RepAI/SharedSessionManager.swift:217:45: error: cannot find 'get_time_in_reps_swift' in scope
+            guard let timeInRepMultiArray = get_time_in_reps_swift(
+                                            ^~~~~~~~~~~~~~~~~~~~~~
+/Users/grantking/Desktop/RepAI/SharedSessionManager.swift:228:36: error: cannot find 'lstm_core_model' in scope
+            let lstmNetModel = try lstm_core_model(configuration: MLModelConfiguration()) // Your LSTM model name
+                                   ^~~~~~~~~~~~~~~
+/Users/grantking/Desktop/RepAI/SharedSessionManager.swift:233:35: error: cannot find 'mlMultiArrayToArray' in scope
+            let finalPrediction = mlMultiArrayToArray(finalOutputMultiArray)[0]
+                                  ^~~~~~~~~~~~~~~~~~~
+
+/Users/grantking/Desktop/RepAI/SharedSessionManager.swift:211:36: Cannot find 'convnet_model' in scope
+
+/Users/grantking/Desktop/RepAI/SharedSessionManager.swift:217:45: Cannot find 'get_time_in_reps_swift' in scope
+
+/Users/grantking/Desktop/RepAI/SharedSessionManager.swift:228:36: Cannot find 'lstm_core_model' in scope
+
+/Users/grantking/Desktop/RepAI/SharedSessionManager.swift:233:35: Cannot find 'mlMultiArrayToArray' in scope
+
+
+Build target RepAI of project RepAI with configuration Debug
+
+SwiftCompile normal arm64 Compiling\ ContentView.swift /Users/grantking/Desktop/RepAI/RepAI/ContentView.swift (in target 'RepAI' from project 'RepAI')
+
+Command SwiftCompile failed with a nonzero exit code
+
+Command SwiftCompile failed with a nonzero exit code
+
+
+
+Build failed    7/7/25, 4:34 PM    3.2 seconds
