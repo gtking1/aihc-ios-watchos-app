@@ -1,8 +1,20 @@
-import torch
-from torch import nn
 import random
-import torch.nn.functional as F
+import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import torch
+from torch.utils.data import Dataset, DataLoader, ConcatDataset
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_curve, auc
+from torch import nn
+import torch.nn.functional as F
+from scipy.stats import linregress
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
+import json
+import os
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 in_channels = 6
 winsize = 256
@@ -56,8 +68,14 @@ def get_time_in_reps(preds, stride, winsize):
     # preds = torch.stack(consolidated, axis=0)
     time_in_rep = torch.stack(time_in_rep, axis=0)
 
+    print("End Reps:", end_reps)
+
     # rewindow
     time_in_rep = time_in_rep.unfold(1, winsize, stride)
+
+    if not os.path.isfile('fullTIRComparison2.txt'):
+        np.savetxt('fullTIRComparison2.txt', time_in_rep.squeeze(0).numpy())
+        print("Saved file")
 
     return time_in_rep
 
@@ -348,9 +366,10 @@ class LSTMNetNew(nn.Module):
         ], betas=betas, lr=lr)
         return optimizer
 
-weights, config = torch.load('best_model-3binary-77.pth', map_location=torch.device("cpu"), weights_only=True)
-model = LSTMNet(config)
+weights, config = torch.load('best_model-3binary-77.pth', map_location=torch.device("cpu"))#, weights_only=True)
+model = LSTMNet(config).to(torch.device('cpu'))
 model.load_state_dict(weights)
+
 model.eval()
 
 modelNew = LSTMNetNew(config)
@@ -367,7 +386,54 @@ for i in range(32):
         example_window.append(example_sample)
     example_input_data.append(example_window)
 
-example_input_x = torch.tensor(example_input_data).transpose(1, 2).contiguous().unsqueeze(0).to(torch.float32)
+def moving_average(data, window_size=15):
+    print("Shape:", data.shape)
+    X_smooth = np.zeros(data.shape)
+    for i,channel in enumerate(data):
+        X_smooth[i] = np.convolve(channel, np.ones(window_size)/window_size, mode='same')
+    return torch.from_numpy(X_smooth).to(torch.float32)
+
+evaluate_real_time_comparison = np.loadtxt('evaluate-real-time-comparison.txt')
+#print(evaluate_real_time_comparison.shape)
+eval2 = np.loadtxt('eval2.txt')
+
+dataset = []
+# firstWindow = evaluate_real_time_comparison[:, :256]
+# firstWindow = moving_average(firstWindow)
+# dataset.append(firstWindow)
+for i in range(32):
+    start = (i * 64)
+    end = start + 256
+    #print(start, end)
+    window = evaluate_real_time_comparison[:, start:end]
+    window = moving_average(window)
+    dataset.append(window)
+np_dataset = np.array(dataset)
+#print(np_dataset.shape)
+stride = 64
+
+confs = []
+
+with torch.no_grad():
+    for i in range(32):
+        partialOutput = model(torch.tensor(np_dataset[0:(i+1)]).unsqueeze(0))
+        confs.append(F.sigmoid(partialOutput.squeeze(0).squeeze(1)[-1]))
+
+print("CONFS???:", confs)
+
+#np_dataset2 = np.loadtxt('evaluate-real-time-comparison2.txt').reshape((32, 6, 256)).astype('float32')
+
+#print("Datasets equal?", np.all(np_dataset == np_dataset2))
+
+# with torch.no_grad():
+#     partialOutput = model(torch.tensor(np_dataset).unsqueeze(0))
+
+print("Partial Output:", partialOutput)
+
+eval2 = eval2.reshape((32, 256, 6)).transpose(0, 2, 1)
+
+#example_input_x = torch.tensor(example_input_data).transpose(1, 2).contiguous().unsqueeze(0).to(torch.float32)
+example_input_x = torch.tensor(np_dataset[0:7]).contiguous().unsqueeze(0).to(torch.float32)
 
 temp_encoder_model = ConvNet(config) # Only need the encoder part
 temp_encoder_model.load_state_dict(model.encoder.state_dict()) # Load relevant weights
@@ -405,10 +471,10 @@ with torch.no_grad():
 
 # Compare original_output and split_python_output
 # Use torch.allclose for numerical stability
-# print(f"Are Python outputs close? {torch.allclose(og_output, new_output, atol=1e-5, rtol=1e-4)}")
-# # Adjust atol (absolute tolerance) and rtol (relative tolerance) as needed
-# # You can also look at the mean absolute error (MAE) or max absolute difference
-# print(f"Max absolute difference: {torch.max(torch.abs(og_output - new_output))}")
+print(f"Are Python outputs close? {torch.allclose(og_output, new_output, atol=1e-5, rtol=1e-4)}")
+# Adjust atol (absolute tolerance) and rtol (relative tolerance) as needed
+# You can also look at the mean absolute error (MAE) or max absolute difference
+print(f"Max absolute difference: {torch.max(torch.abs(og_output - new_output))}")
 
 
 with torch.no_grad():
@@ -430,7 +496,6 @@ with torch.no_grad():
 # print(f"Max absolute difference: {torch.max(torch.abs(new_output - exported_output))}")
 
 import coremltools as ct
-import numpy as np # Make sure numpy is imported for ct.precision types
 
 # ... (all your existing code) ...
 
@@ -560,8 +625,11 @@ print(f"Core ML LSTMNet output shape: {coreml_lstm_output_np.shape}")
 print("\nComparing Core ML outputs with original PyTorch outputs...")
 
 new_output_np = new_output.cpu().numpy()
-comparison_lstm = np.allclose(new_output_np, coreml_lstm_output_np, atol=1e-5, rtol=1e-4)
-max_diff_lstm = np.max(np.abs(new_output_np - coreml_lstm_output_np))
+#print(F.sigmoid(torch.tensor(new_output_np)))
+comparison_lstm = np.allclose(F.sigmoid(torch.tensor(new_output_np)).numpy(), F.sigmoid(torch.tensor(coreml_lstm_output_np)).numpy(), atol=1e-5, rtol=1e-4)
+max_diff_lstm = np.max(np.abs(F.sigmoid(torch.tensor(new_output_np)).numpy() - F.sigmoid(torch.tensor(coreml_lstm_output_np)).numpy()))
+
+#print(F.sigmoid(torch.tensor(new_output_np)).numpy() - F.sigmoid(torch.tensor(coreml_lstm_output_np)).numpy())
 
 print(f"Are Core ML LSTMNet outputs close to PyTorch? {comparison_lstm}")
 print(f"Max absolute difference (Core ML LSTMNet vs PyTorch): {max_diff_lstm}")
@@ -578,3 +646,10 @@ max_diff_precomputed = np.max(np.abs(precomputed_time_in_rep_cpu.numpy() - corem
 
 print(f"Are Core ML-derived precomputed_time_in_rep close to PyTorch-derived? {comparison_precomputed}")
 print(f"Max absolute difference (Core ML precomputed vs PyTorch): {max_diff_precomputed}")
+
+
+print("OG Output:", F.sigmoid(og_output))
+
+tir1 = np.loadtxt('fullTIRComparison.txt')
+tir2 = np.loadtxt('fullTIRComparison2.txt')
+print(np.all(tir1 == tir2))

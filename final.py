@@ -2,6 +2,12 @@ import numpy as np
 import tkinter as tk
 import tkinter.filedialog
 
+def moving_average(data, window_size=15):
+    X_smooth = np.zeros(data.shape)
+    for i,channel in enumerate(data):
+        X_smooth[i] = np.convolve(channel, np.ones(window_size)/window_size, mode='same')
+    return torch.from_numpy(X_smooth).to(torch.float32)
+
 #tk.filedialog.askopenfilename()
 # motionData = np.loadtxt('inputFiles/motionDataFix.txt', delimiter=' ')
 # #motionDataTest = motionData.reshape((32, 6, 256))
@@ -198,6 +204,8 @@ def get_time_in_reps(preds, stride, winsize):
 
     # rewindow
     time_in_rep = time_in_rep.unfold(1, winsize, stride)
+
+    print("END REPS:", end_reps)
 
     return time_in_rep
 
@@ -507,6 +515,34 @@ class LSTMNetNew(nn.Module):
 # x_flat_for_seg = example_input_x.contiguous().view(T, C, L)
 # _, seg_logits_for_time_in_rep = temp_encoder_model(x_flat_for_seg)
 
+evaluate_real_time_comparison = np.loadtxt('evaluate-real-time-comparison.txt')
+print(evaluate_real_time_comparison.shape)
+eval2 = np.loadtxt('eval2.txt')
+
+dataset = []
+# firstWindow = evaluate_real_time_comparison[:, :256]
+# firstWindow = moving_average(firstWindow)
+# dataset.append(firstWindow)
+for i in range(32):
+    start = (i * 64)
+    end = start + 256
+    print(start, end)
+    window = evaluate_real_time_comparison[:, start:end]
+    window = moving_average(window)
+    dataset.append(window)
+np_dataset = np.array(dataset)
+print(np_dataset.shape)
+stride = 64
+
+eval2 = eval2.reshape((32, 256, 6)).transpose(0, 2, 1)
+
+# evaluate_real_time_comparison = torch.tensor(evaluate_real_time_comparison).unfold(1, winsize, stride)
+# evaluate_real_time_comparison = evaluate_real_time_comparison.reshape((32, 256, 6)).numpy().transpose((0, 2, 1))
+# print(evaluate_real_time_comparison.shape)
+# print(np.all(np_dataset == evaluate_real_time_comparison))
+for i in range(6):
+    print(np.max(np_dataset[0, i]))
+    print(np.min(np_dataset[0, i]))
 
 import coremltools as ct
 
@@ -515,9 +551,11 @@ mlmodel_convnet = ct.models.MLModel("convnet_model.mlpackage")
 lstmInput = np.loadtxt("inputFiles/lstmInput2.txt", delimiter=' ')
 lstmInput = lstmInput.reshape((32, 6, 256))
 
-convnet_input_dict = {"x": lstmInput}
+#convnet_input_dict = {"x": lstmInput}
+convnet_input_dict = {"x": np_dataset}
 convnet_output_dict = mlmodel_convnet.predict(convnet_input_dict)
 coreml_seg_logits_np = convnet_output_dict["round_1"]
+coreml_seg_logits_np = F.sigmoid(torch.tensor(coreml_seg_logits_np)).numpy().round()
 
 # #print(f"Core ML ConvNet output shape (seg_logits): {coreml_seg_logits_np.shape}")
 
@@ -707,7 +745,7 @@ mlmodel_lstm = ct.models.MLModel("lstm_core_model.mlpackage")
 # motionDataTest = torch.unsqueeze(torch.tensor(motionDataTest), 0).numpy()
 
 lstm_input_dict = {
-    "x": torch.tensor(lstmInput).unsqueeze(0).numpy(),
+    "x": torch.tensor(np_dataset).unsqueeze(0).numpy(),
     "time_in_rep": time_in_rep
 }
 lstm_output_dict = mlmodel_lstm.predict(lstm_input_dict)
@@ -715,12 +753,12 @@ coreml_lstm_output_np = lstm_output_dict["var_357"]
 coreml_lstm_output_np = coreml_lstm_output_np[0]
 coreml_lstm_output_np = torch.tensor(coreml_lstm_output_np).squeeze(1).numpy()
 
-print(coreml_lstm_output_np)
+#print(coreml_lstm_output_np)
 
 lstmOutput = np.loadtxt('inputFiles/lstmOutput2.txt', delimiter=' ')
 lstmOutput = torch.tensor(lstmOutput).to(torch.float32).numpy()
 
-print(lstmOutput)
+#print(lstmOutput)
 print(np.all(coreml_lstm_output_np == lstmOutput))
 
 print(F.sigmoid(torch.tensor(coreml_lstm_output_np)[-1]).round())
@@ -755,3 +793,5 @@ print(F.sigmoid(torch.tensor(coreml_lstm_output_np)[-1]).round())
 tirInput2 = np.loadtxt('inputFiles/encoderInput.txt', delimiter=' ')
 lstmInput2 = np.loadtxt('inputFiles/lstmInput2.txt', delimiter=' ')
 print(np.sum(tirInput2 == lstmInput2))
+
+print(F.sigmoid(torch.tensor(coreml_lstm_output_np)))
