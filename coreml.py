@@ -414,6 +414,58 @@ stride = 64
 
 confs = []
 
+np_dataset = np.loadtxt('inputFiles/finalEncoderInput.txt', delimiter=' ').astype('float32')
+np_dataset = np_dataset.reshape((32, 6, 256))
+
+np.savetxt('finalEncoderInputAppend.txt', torch.tensor(np_dataset).flatten().unsqueeze(0).numpy(), delimiter=',')
+
+def savetxt_compact(fname, x, fmt="%.6g", delimiter=','):
+    with open(fname, 'w') as fh:
+        for row in x:
+            line = delimiter.join("0.0" if value == 0 else fmt % value for value in row)
+            fh.write(line + '\n')
+
+foldedDataset = []
+
+print(np_dataset[0].shape)
+
+window = np_dataset[0][:]
+for i in range(4):
+    uniqueData = []
+    for j in range(6):
+        uniqueData.append(window[j][64 * i : 64 + (64 * i)])
+    uniqueData = np.array(uniqueData)
+    print("Unique Shape:", uniqueData.shape)
+    foldedDataset.append(uniqueData)
+
+#foldedDataset.append(np_dataset[0])
+
+#print(np.array(foldedDataset).shape)
+
+for i in range(31):
+    window = np_dataset[i + 1][:]
+    uniqueData = []
+    for j in range(6):
+        uniqueData.append(window[j][192:256])
+    uniqueData = np.array(uniqueData)
+    print("Unique Shape:", uniqueData.shape)
+    foldedDataset.append(uniqueData)
+
+foldedDataset = np.array(foldedDataset)
+print(foldedDataset.shape)
+
+foldedDataset = foldedDataset.transpose(0, 2, 1)
+foldedDataset = np.concatenate(foldedDataset, 0)
+
+# fakeColumn = np.full((2240, 1), 72)
+# fakeText = np.full((2240, 1), 'blah')
+
+# print(foldedDataset.shape)
+
+# foldedDataset = np.concatenate((fakeColumn, foldedDataset, fakeColumn, fakeText, fakeText, fakeColumn, fakeText), axis=1)
+
+print(foldedDataset.shape)
+
 with torch.no_grad():
     for i in range(32):
         partialOutput = model(torch.tensor(np_dataset[0:(i+1)]).unsqueeze(0))
