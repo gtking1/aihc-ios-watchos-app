@@ -393,7 +393,7 @@ def moving_average(data, window_size=15):
         X_smooth[i] = np.convolve(channel, np.ones(window_size)/window_size, mode='same')
     return torch.from_numpy(X_smooth).to(torch.float32)
 
-evaluate_real_time_comparison = np.loadtxt('evaluate-real-time-comparison.txt')
+#evaluate_real_time_comparison = np.loadtxt('evaluate-real-time-comparison.txt')
 #print(evaluate_real_time_comparison.shape)
 eval2 = np.loadtxt('eval2.txt')
 
@@ -401,14 +401,14 @@ dataset = []
 # firstWindow = evaluate_real_time_comparison[:, :256]
 # firstWindow = moving_average(firstWindow)
 # dataset.append(firstWindow)
-for i in range(32):
-    start = (i * 64)
-    end = start + 256
-    #print(start, end)
-    window = evaluate_real_time_comparison[:, start:end]
-    window = moving_average(window)
-    dataset.append(window)
-np_dataset = np.array(dataset)
+# for i in range(32):
+#     start = (i * 64)
+#     end = start + 256
+#     #print(start, end)
+#     window = evaluate_real_time_comparison[:, start:end]
+#     window = moving_average(window)
+#     dataset.append(window)
+# np_dataset = np.array(dataset)
 #print(np_dataset.shape)
 stride = 64
 
@@ -416,6 +416,39 @@ confs = []
 
 np_dataset = np.loadtxt('inputFiles/finalEncoderInput.txt', delimiter=' ').astype('float32')
 np_dataset = np_dataset.reshape((32, 6, 256))
+
+finalCheckDS = []
+
+sample = []
+for i in range(256):
+    accx = np_dataset[0][0][i]
+    accy = np_dataset[0][1][i]
+    accz = np_dataset[0][2][i]
+    gyrx = np_dataset[0][3][i]
+    gyry = np_dataset[0][4][i]
+    gyrz = np_dataset[0][5][i]
+
+    sample = [accx, accy, accz, gyrx, gyry, gyrz]
+    finalCheckDS.append(sample)
+
+for j in range(31):
+    sample = []
+    for i in range(64):
+        accx = np_dataset[1 + j][0][i + 192]
+        accy = np_dataset[1 + j][1][i + 192]
+        accz = np_dataset[1 + j][2][i + 192]
+        gyrx = np_dataset[1 + j][3][i + 192]
+        gyry = np_dataset[1 + j][4][i + 192]
+        gyrz = np_dataset[1 + j][5][i + 192]
+
+        sample = [accx, accy, accz, gyrx, gyry, gyrz]
+        finalCheckDS.append(sample)
+
+finalCheckDS = np.array(finalCheckDS)
+
+print("FinalCheckDS size: ", finalCheckDS.shape)
+
+np.savetxt('./finalCheckDS.txt', finalCheckDS, delimiter=',')
 
 np.savetxt('finalEncoderInputAppend.txt', torch.tensor(np_dataset).flatten().unsqueeze(0).numpy(), delimiter=',')
 
@@ -479,6 +512,11 @@ print("CONFS???:", confs)
 
 # with torch.no_grad():
 #     partialOutput = model(torch.tensor(np_dataset).unsqueeze(0))
+
+sigmoidlstm = np.loadtxt('inputFiles/finalLSTM.txt', delimiter=' ', dtype='float32')
+sigmoidlstm = torch.tensor(sigmoidlstm)
+sigmoidlstm = F.sigmoid(sigmoidlstm)
+np.savetxt('./finalLSTMComparison.txt', sigmoidlstm, delimiter=' ', fmt='%.18f')
 
 print("Partial Output:", partialOutput)
 
