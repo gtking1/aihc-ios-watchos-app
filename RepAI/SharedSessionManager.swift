@@ -335,13 +335,45 @@ class SharedSessionManager: NSObject, ObservableObject {
             
             shapedConvNetModelInputX = shapedConvNetModelInputX.transposed(permutation: [0, 2, 1])
             
-            var lstmUnsqueeze = MLShapedArray<Float>(convNetModelInputX).reshaped(to: [1, 32, 256, 6]).transposed(permutation: [0, 1, 3, 2])
-            
             let finalConvNetModelInputX = MLMultiArray(shapedConvNetModelInputX)
+            
+            let startingZeros2: [Float] = [Float](repeating: 0.0, count: 7)
+            let endingZeros2: [Float] = [Float](repeating: 0.0, count: 8)
+            let kernel2: [Float] = [Float](repeating: 1.0 / Float(15), count: 15)
+            
+            for i: Int in 0..<32 {
+                for j: Int in 0..<6 {
+                    var X_smooth: [Float] = [Float](repeating: 0.0, count: 256)
+                    var X_smoothRounded: [Float] = [Float](repeating: 0.0, count: 256)
+                    for k: Int in 0..<256 {
+                        let accessShape: [NSNumber] = [
+                            NSNumber(value: i),
+                            NSNumber(value: j),
+                            NSNumber(value: k)
+                        ]
+                        X_smooth[k] = finalConvNetModelInputX[accessShape].floatValue
+                        // print(finalConvNetModelInputX[accessShape].floatValue)
+                    }
+                    X_smooth = startingZeros2 + X_smooth + endingZeros2
+                    X_smoothRounded = vDSP.convolve(X_smooth, withKernel: kernel2)
+                    for k: Int in 0..<256 {
+                        let accessShape: [NSNumber] = [
+                            NSNumber(value: i),
+                            NSNumber(value: j),
+                            NSNumber(value: k)
+                        ]
+                        finalConvNetModelInputX[accessShape] = NSNumber(value: X_smoothRounded[k])
+                        print(finalConvNetModelInputX[accessShape].floatValue)
+                    }
+                }
+            }
+            
+            var lstmUnsqueeze = MLShapedArray<Float>(finalConvNetModelInputX).reshaped(to: [1, 32, 6, 256])
             let finalLstmModelInputX = MLMultiArray(lstmUnsqueeze)
 
             // EXPORT: Input to the Encoder (ConvNet)
             predictionExportManager.exportFloats(data: finalConvNetModelInputX, filename: "encoder_input_\(timestamp).txt")
+            predictionExportManager.exportFloats(data: finalLstmModelInputX, filename: "encoder_input_\(timestamp).txt")
 
 
             // 2. ConvNet Inference

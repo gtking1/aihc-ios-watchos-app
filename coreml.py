@@ -513,7 +513,7 @@ print("CONFS???:", confs)
 # with torch.no_grad():
 #     partialOutput = model(torch.tensor(np_dataset).unsqueeze(0))
 
-sigmoidlstm = np.loadtxt('inputFiles/finalLSTM.txt', delimiter=' ', dtype='float32')
+sigmoidlstm = np.loadtxt('inputFiles/plzWorkOutput.txt', delimiter=' ', dtype='float32')
 sigmoidlstm = torch.tensor(sigmoidlstm)
 sigmoidlstm = F.sigmoid(sigmoidlstm)
 np.savetxt('./finalLSTMComparison.txt', sigmoidlstm, delimiter=' ', fmt='%.18f')
