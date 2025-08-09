@@ -513,7 +513,7 @@ print("CONFS???:", confs)
 # with torch.no_grad():
 #     partialOutput = model(torch.tensor(np_dataset).unsqueeze(0))
 
-sigmoidlstm = np.loadtxt('inputFiles/plzWorkOutput.txt', delimiter=' ', dtype='float32')
+sigmoidlstm = np.loadtxt('inputFiles/accelOneOutput.txt', delimiter=' ', dtype='float32')
 sigmoidlstm = torch.tensor(sigmoidlstm)
 sigmoidlstm = F.sigmoid(sigmoidlstm)
 np.savetxt('./finalLSTMComparison.txt', sigmoidlstm, delimiter=' ', fmt='%.18f')
@@ -587,7 +587,16 @@ with torch.no_grad():
 
 import coremltools as ct
 
-# ... (all your existing code) ...
+lstmnet_x_input_shape = ct.Shape(shape=(1,
+                                        ct.RangeDim(lower_bound=1, upper_bound=32),
+                                        6,
+                                        256
+))
+
+lstmnet_tir_input_shape = ct.Shape(shape=(1,
+                                        ct.RangeDim(lower_bound=1, upper_bound=32),
+                                        256
+))
 
 # --- Convert LSTMNet model ---
 print("\nConverting LSTMNet model...")
@@ -595,8 +604,8 @@ try:
     coreml_model_lstm = ct.convert(
         exported_model, # This is your exported_program from torch.export
         inputs=[
-            ct.TensorType(name="x", shape=example_input_x.shape, dtype=np.float32), # Specify dtype here
-            ct.TensorType(name="time_in_rep", shape=precomputed_time_in_rep.shape, dtype=np.float32) # Specify dtype here
+            ct.TensorType(name="x", shape=lstmnet_x_input_shape, dtype=np.float32), # Specify dtype here
+            ct.TensorType(name="time_in_rep", shape=lstmnet_tir_input_shape, dtype=np.float32) # Specify dtype here
         ],
         convert_to="mlprogram",
         compute_precision=ct.precision.FLOAT32, # <--- ADD THIS LINE
@@ -608,12 +617,18 @@ except Exception as e:
     print(f"Failed to convert LSTMNet model: {e}")
 
 # --- Convert ConvNet (encoder) model ---
+
+convnet_input_shape = ct.Shape(shape=(ct.RangeDim(lower_bound=1, upper_bound=32),
+                                      6,
+                                      256
+))
+
 print("\nConverting ConvNet (encoder) model...")
 try:
     coreml_model_encoder = ct.convert(
         exported_encoder, # This is your exported_program for the encoder
         inputs=[
-            ct.TensorType(name="x", shape=example_inputs_encoder[0].shape, dtype=np.float32) # Specify dtype here
+            ct.TensorType(name="x", shape=convnet_input_shape, dtype=np.float32) # Specify dtype here
         ],
         convert_to="mlprogram",
         compute_precision=ct.precision.FLOAT32, # <--- ADD THIS LINE

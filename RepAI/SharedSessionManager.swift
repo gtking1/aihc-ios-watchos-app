@@ -128,7 +128,7 @@ class SharedSessionManager: NSObject, ObservableObject {
     #if os(iOS)
     private var convNetModel: convnet_model? // Your ConvNet model class
     private var lstmCoreModel: lstm_core_model? // Your LSTM model class
-    internal var sensorDataManager: SensorDataManager!
+    static var sensorDataManager: SensorDataManager!
     private var predictionExportManager: PredictionExportManager? // NEW: Instance for exporting data
 
     // iPhone's own buffer count
@@ -156,7 +156,7 @@ class SharedSessionManager: NSObject, ObservableObject {
             self.lstmCoreModel = try lstm_core_model(configuration: MLModelConfiguration())
 
             // Initialize SensorDataManager and pass callbacks
-            self.sensorDataManager = SensorDataManager(
+            SharedSessionManager.sensorDataManager = SensorDataManager(
                 channels: CHANNELS,
                 windowLength: WINDOW_LENGTH,
                 sequenceLength: SEQUENCE_LENGTH,
@@ -254,7 +254,7 @@ class SharedSessionManager: NSObject, ObservableObject {
             self.lastReceivedMessage = "iPhone Session Reset" // Indicate internal reset
         }
         // Signal the SensorDataManager to stop and clear its buffer
-        self.sensorDataManager.stopProcessing()
+        SharedSessionManager.sensorDataManager.stopProcessing()
         // Optionally clear exported files upon session reset
         //self.predictionExportManager?.clearExportedFiles()
         print("iPhone: All iPhone session states reset. SensorDataManager stopped. Exported files cleared.")
@@ -270,7 +270,7 @@ class SharedSessionManager: NSObject, ObservableObject {
             self.lastPredictionTimestamp = nil
         }
         // Signal the SensorDataManager to start processing
-        self.sensorDataManager.startProcessing()
+        SharedSessionManager.sensorDataManager.startProcessing()
         print("iPhone: iPhone session states activated. SensorDataManager started.")
     }
     #endif // #if os(iOS)
@@ -278,6 +278,7 @@ class SharedSessionManager: NSObject, ObservableObject {
     // MARK: - Core ML Inference (iPhone Only)
     #if os(iOS)
     private func performInference(with convNetBatchInput: MLMultiArray) -> Double {
+        print("Entered perform inference function")
         guard let convNetModel = convNetModel,
               let lstmCoreModel = lstmCoreModel,
               let predictionExportManager = predictionExportManager else {
@@ -289,10 +290,12 @@ class SharedSessionManager: NSObject, ObservableObject {
             // Generate a unique timestamp for this inference run to name files
             let timestamp = Int(Date().timeIntervalSince1970)
             
+            print()
+            
             // 1. Prepare ConvNet Input
             guard convNetBatchInput.shape.count == 4,
                   convNetBatchInput.shape[0].intValue == FIXED_N_BATCH_SIZE,
-                  convNetBatchInput.shape[1].intValue == SEQUENCE_LENGTH, // T
+                  convNetBatchInput.shape[1].intValue == SharedSessionManager.sensorDataManager.totalWindowCount, // T
                   convNetBatchInput.shape[2].intValue == CHANNELS,
                   convNetBatchInput.shape[3].intValue == WINDOW_LENGTH else {
                 print("Error: convNetBatchInput from SensorDataManager has unexpected shape for ConvNet: \(convNetBatchInput.shape)")
@@ -301,13 +304,13 @@ class SharedSessionManager: NSObject, ObservableObject {
 
             // Create a new MLMultiArray with shape [T, C, L] for ConvNet's 'x' input
             let convNetInputShape: [NSNumber] = [
-                NSNumber(value: SEQUENCE_LENGTH),
+                NSNumber(value: SharedSessionManager.sensorDataManager.totalWindowCount),
                 NSNumber(value: WINDOW_LENGTH),
                 NSNumber(value: CHANNELS)
             ]
             
             let lstmtInputShape: [NSNumber] = [
-                NSNumber(value: SEQUENCE_LENGTH),
+                NSNumber(value: SharedSessionManager.sensorDataManager.totalWindowCount),
                 NSNumber(value: WINDOW_LENGTH),
                 NSNumber(value: CHANNELS)
             ]
@@ -318,7 +321,7 @@ class SharedSessionManager: NSObject, ObservableObject {
             let convNetBatchInputPtr = convNetBatchInput.dataPointer.assumingMemoryBound(to: Float.self)
             let convNetModelInputXPtr = convNetModelInputX.dataPointer.assumingMemoryBound(to: Float.self)
             
-            let elementsPerSequence = SEQUENCE_LENGTH * CHANNELS * WINDOW_LENGTH
+            let elementsPerSequence = SharedSessionManager.sensorDataManager.totalWindowCount * CHANNELS * WINDOW_LENGTH
             memcpy(convNetModelInputXPtr, convNetBatchInputPtr, elementsPerSequence * MemoryLayout<Float>.size)
             
             //            var shapedArray = MLShapedArray<Float>(myArray)
@@ -341,7 +344,7 @@ class SharedSessionManager: NSObject, ObservableObject {
             let endingZeros2: [Float] = [Float](repeating: 0.0, count: 8)
             let kernel2: [Float] = [Float](repeating: 1.0 / Float(15), count: 15)
             
-            for i: Int in 0..<32 {
+            for i: Int in 0..<SharedSessionManager.sensorDataManager.totalWindowCount {
                 for j: Int in 0..<6 {
                     var X_smooth: [Float] = [Float](repeating: 0.0, count: 256)
                     var X_smoothRounded: [Float] = [Float](repeating: 0.0, count: 256)
@@ -368,7 +371,7 @@ class SharedSessionManager: NSObject, ObservableObject {
                 }
             }
             
-            var lstmUnsqueeze = MLShapedArray<Float>(finalConvNetModelInputX).reshaped(to: [1, 32, 6, 256])
+            var lstmUnsqueeze = MLShapedArray<Float>(finalConvNetModelInputX).reshaped(to: [1, SharedSessionManager.sensorDataManager.totalWindowCount, 6, 256])
             let finalLstmModelInputX = MLMultiArray(lstmUnsqueeze)
 
             // EXPORT: Input to the Encoder (ConvNet)
@@ -437,7 +440,7 @@ class SharedSessionManager: NSObject, ObservableObject {
             // Extract the final prediction (last value of the sequence).
             guard finalPredictionSeries.shape.count == 3,
                   finalPredictionSeries.shape[0].intValue == FIXED_N_BATCH_SIZE,
-                  finalPredictionSeries.shape[1].intValue == SEQUENCE_LENGTH,
+                  finalPredictionSeries.shape[1].intValue == SharedSessionManager.sensorDataManager.totalWindowCount,
                   finalPredictionSeries.shape[2].intValue == 1 else {
                 print("Error: LSTM output 'var_357' has unexpected shape: \(finalPredictionSeries.shape)")
                 return 0.0
@@ -445,7 +448,7 @@ class SharedSessionManager: NSObject, ObservableObject {
 
             let lastPredictionIndex = [
                 0, // N (batch size)
-                SEQUENCE_LENGTH - 1, // T (last time step)
+                SharedSessionManager.sensorDataManager.totalWindowCount - 1, // T (last time step)
                 0  // Value (single output)
             ] as [NSNumber]
 
@@ -569,11 +572,11 @@ extension SharedSessionManager: WCSessionDelegate {
             if self.isSessionActive {
                 if let incomingWindows = message["sensorData"] as? [[Float]] {
                     print("iPhone: Received \(incomingWindows.count) sensor data windows.")
-                    self.sensorDataManager.addWindowsForInferenceTrigger(incomingWindows: incomingWindows) { [weak self] fullSequenceReadyForInference in
+                    SharedSessionManager.sensorDataManager.addWindowsForInferenceTrigger(incomingWindows: incomingWindows) { [weak self] fullSequenceReadyForInference in
                         guard let self = self else { return }
 
                         if let convNetInput = fullSequenceReadyForInference {
-                            print("iPhone: Full sequence (T=\(SEQUENCE_LENGTH)) ready and inference trigger met (\(self.sensorDataManager.accumulatedNewWindowsCount) new windows). Processing sensor data via pipeline...")
+                            print("iPhone: Full sequence (T=\(SharedSessionManager.sensorDataManager.totalWindowCount)) ready and inference trigger met (\(INFERENCE_TRIGGER_WINDOWS) new windows). Processing sensor data via pipeline...")
                             let prediction = self.performInference(with: convNetInput)
 
                             print("iPhone: Sending prediction \(String(format: "%.0f", prediction)) back to Watch.")
@@ -585,7 +588,7 @@ extension SharedSessionManager: WCSessionDelegate {
                             self.hasReceivedPrediction = true
                             self.lastPredictionTimestamp = Date() // Update timestamp here
                         } else {
-                            print("iPhone: Received sensor data, accumulating for inference. Buffer count: \(self.sensorDataManager.buffer.count), New windows: \(self.sensorDataManager.accumulatedNewWindowsCount)/\(INFERENCE_TRIGGER_WINDOWS).")
+                            print("iPhone: Received sensor data, accumulating for inference. Buffer count: \(SharedSessionManager.sensorDataManager.buffer.count), New windows: \(SharedSessionManager.sensorDataManager.accumulatedNewWindowsCount)/\(INFERENCE_TRIGGER_WINDOWS).")
                             replyHandler(["message": "Data received, accumulating for inference."])
                         }
                     }
@@ -625,6 +628,7 @@ class SensorDataManager {
 
     // Counter for newly added windows since last inference trigger
     internal private(set) var accumulatedNewWindowsCount: Int = 0
+    internal private(set) var totalWindowCount: Int = 0
 
     init(channels: Int, windowLength: Int, sequenceLength: Int, inferenceTriggerWindowCount: Int, onBufferCountUpdate: ((Int) -> Void)? = nil) {
         self.channels = channels
@@ -680,13 +684,20 @@ class SensorDataManager {
         // Only increment if we actually added them (i.e., if isActive was true)
         if isActive {
             accumulatedNewWindowsCount += incomingWindows.count
+            totalWindowCount += incomingWindows.count
+            if totalWindowCount > 32 {
+                totalWindowCount = 32
+            }
         }
+        
+        print(accumulatedNewWindowsCount)
+        print(totalWindowCount)
 
         // Trigger inference ONLY if:
         // 1. We have accumulated enough *new* windows to meet the trigger count, AND
         // 2. The total buffer now contains the full SEQUENCE_LENGTH (T) windows.
-        if isActive && accumulatedNewWindowsCount >= inferenceTriggerWindowCount && buffer.count == sequenceLength {
-            print("SensorDataManager: Triggering inference. Full sequence of \(sequenceLength) windows available, and \(accumulatedNewWindowsCount) new windows accumulated (>= \(inferenceTriggerWindowCount)).")
+        if isActive && accumulatedNewWindowsCount >= inferenceTriggerWindowCount { //&& buffer.count == sequenceLength {
+            print("SensorDataManager: Triggering inference. Sequence of \(totalWindowCount) windows available, and \(accumulatedNewWindowsCount) new windows accumulated (>= \(inferenceTriggerWindowCount)).")
             let multiArray = getCurrentSequenceForInference()
             accumulatedNewWindowsCount = 0 // Reset counter after triggering inference
             completion(multiArray)
@@ -698,6 +709,7 @@ class SensorDataManager {
     func clearBuffer() {
         buffer.removeAll()
         accumulatedNewWindowsCount = 0 // Reset counter on clear
+        totalWindowCount = 0
         print("SensorDataManager: Buffer cleared.")
         onBufferCountUpdate?(buffer.count)
     }
@@ -705,16 +717,16 @@ class SensorDataManager {
     func getCurrentSequenceForInference() -> MLMultiArray? {
         // This method should only be called when `buffer.count` is exactly `sequenceLength`
         // due to the condition in `addWindowsForInferenceTrigger`.
-        guard buffer.count == sequenceLength else {
-            print("SensorDataManager: Error - getCurrentSequenceForInference called when buffer.count (\(buffer.count)) != sequenceLength (\(sequenceLength)).")
-            return nil
-        }
+//        guard buffer.count == sequenceLength else {
+//            print("SensorDataManager: Error - getCurrentSequenceForInference called when buffer.count (\(buffer.count)) != sequenceLength (\(sequenceLength)).")
+//            return nil
+//        }
         
         let currentSequence = buffer // The buffer already holds exactly `sequenceLength` windows
 
         let shape: [NSNumber] = [
             NSNumber(value: FIXED_N_BATCH_SIZE),
-            NSNumber(value: sequenceLength),
+            NSNumber(value: totalWindowCount),
             NSNumber(value: channels),
             NSNumber(value: windowLength)
         ]
@@ -722,7 +734,7 @@ class SensorDataManager {
         do {
             let multiArray = try MLMultiArray(shape: shape, dataType: .float32)
 
-            for t_idx in 0..<sequenceLength {
+            for t_idx in 0..<totalWindowCount {
                 let currentWindow = currentSequence[t_idx]
 
                 for c_idx in 0..<channels {

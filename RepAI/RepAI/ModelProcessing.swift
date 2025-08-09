@@ -85,7 +85,7 @@ func get_time_in_reps_swift(predsMultiArray: MLMultiArray, stride: Int, winsize:
     // These constants (SEQUENCE_LENGTH, WINDOW_LENGTH, FIXED_N_BATCH_SIZE, KERNEL_SIZE)
     // are expected to be defined as global constants in SharedSessionManager.swift
     // and will be accessible here.
-    guard current_T_dim == SEQUENCE_LENGTH else {
+    guard current_T_dim == SharedSessionManager.sensorDataManager.totalWindowCount else {
         print("Error: predsMultiArray T dimension mismatch. Expected \(SEQUENCE_LENGTH), got \(current_T_dim).")
         return nil
     }

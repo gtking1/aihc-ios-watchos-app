@@ -14,8 +14,8 @@ let SLIDING_STRIDE = 64 // Number of samples to slide the window by
 let DEVICE_MOTION_UPDATE_INTERVAL = 0.01 // 100 Hz
 
 // Normalization constants
-let ACCEL_G_MIN: Float = -2.0
-let ACCEL_G_MAX: Float = 2.0
+let ACCEL_G_MIN: Float = -1.0
+let ACCEL_G_MAX: Float = 1.0
 let GYRO_DEG_MIN: Float = -250.0
 let GYRO_DEG_MAX: Float = 250.0
 let RADIANS_TO_DEGREES_FACTOR = Float(180.0 / Double.pi) // For converting gyro from rad/s to deg/s
@@ -227,13 +227,13 @@ class SensorDataCollector: NSObject, ObservableObject {
 
                 // Apply your custom transformation: [y, -x, -z] for both accel and gyro
                 // Apply clamping for normalization
-                let imuAccelX = clamp(watchAccelY, min: ACCEL_G_MIN, max: ACCEL_G_MAX)
-                let imuAccelY = clamp(-watchAccelX, min: ACCEL_G_MIN, max: ACCEL_G_MAX)
-                let imuAccelZ = clamp(-watchAccelZ, min: ACCEL_G_MIN, max: ACCEL_G_MAX)
+                let imuAccelX = clamp(watchAccelY / ACCEL_G_MAX, min: Float(-1.0), max: Float(1.0))
+                let imuAccelY = clamp(-watchAccelX / ACCEL_G_MAX, min: Float(-1.0), max: Float(1.0))
+                let imuAccelZ = clamp(-watchAccelZ / ACCEL_G_MAX, min: Float(-1.0), max: Float(1.0))
 
-                let imuGyroX = clamp(watchGyroYDeg, min: GYRO_DEG_MIN, max: GYRO_DEG_MAX)
-                let imuGyroY = clamp(-watchGyroXDeg, min: GYRO_DEG_MIN, max: GYRO_DEG_MAX)
-                let imuGyroZ = clamp(-watchGyroZDeg, min: GYRO_DEG_MIN, max: GYRO_DEG_MAX)
+                let imuGyroX = clamp(watchGyroYDeg / GYRO_DEG_MAX, min: Float(-1.0), max: Float(1.0))
+                let imuGyroY = clamp(-watchGyroXDeg / GYRO_DEG_MAX, min: Float(-1.0), max: Float(1.0))
+                let imuGyroZ = clamp(-watchGyroZDeg / GYRO_DEG_MAX, min: Float(-1.0), max: Float(1.0))
 
                 // Store in the `transformedWindow` in the correct channel order
                 // Channel order: [Acc_X, Acc_Y, Acc_Z, Gyr_X, Gyr_Y, Gyr_Z]
